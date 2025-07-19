@@ -1,6 +1,6 @@
 [project]
 name = "webr"
-version = "0.0.1"
+version = "0.0.2"
 description = "Placeholder package for the upcoming `webr` Python library."
 readme = "README.md"
 license = {text = "MIT"}
