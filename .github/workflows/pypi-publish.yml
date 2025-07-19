@@ -4,8 +4,6 @@ on:
     push:
         branches:
             - main
-        # tags:
-        #     - 'v*'  # optional: only publish when you push version tags
 
 permissions:
     contents: read
