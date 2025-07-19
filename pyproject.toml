@@ -1,0 +1,17 @@
+[project]
+name = "webr"
+version = "0.0.1"
+description = "Placeholder package for the upcoming `webr` Python library."
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+  { name = "Harry Townsend", email = "harry.james.townsend@gmail.com" }
+]
+requires-python = ">=3.7"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
