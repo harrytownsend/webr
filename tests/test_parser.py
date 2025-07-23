@@ -1,10 +1,9 @@
 import pytest
 
 from webr.html import HTMLParser, HTMLParserSegment, HTMLParserElementSegment, HTMLParserTextSegment, HTMLParserCommentSegment
-from helpers.htmlbuilder import HTMLBuilder
 from typing import Dict, Optional
 
-htmlBuilder: HTMLBuilder = HTMLBuilder()
+from htmltools.builder import HTMLSegmentBuilder
 
 values: Dict[str, str] = {
 	"title": "Testing...",
@@ -13,27 +12,32 @@ values: Dict[str, str] = {
 	"input.value": "testing...",
 }
 
-tags: Dict[str, int] = {
-	"doctype": htmlBuilder.append("<!DOCTYPE html>"),
-	"html": htmlBuilder.append("<html>"),
-		"head": htmlBuilder.append("<head>"),
-			"title": htmlBuilder.append("<title>"),
-				"title-text": htmlBuilder.append(values["title"]),
-			"/title": htmlBuilder.append("</title>"),
-			"script": htmlBuilder.append("<script type=\"module\">"),
-				"script-text": htmlBuilder.append(values["script"]),
-			"/script": htmlBuilder.append("</script>"),
-		"/head": htmlBuilder.append("</head>"),
-		"body": htmlBuilder.append("<body>"),
-			"input": htmlBuilder.append(f"<input type=\"{values["input.type"]}\" value=\"{values["input.value"]}\" />"),
-		"/body": htmlBuilder.append("</body>"),
-	"/html": htmlBuilder.append("</html>"),
-}
+builder: HTMLSegmentBuilder = HTMLSegmentBuilder()
 
+(
+	builder
+		.doctype("html", "doctype")
+		.open("html", {}, "html")
+			.open("head", {}, "head")
+				.open("title", {}, "title")
+					.text(values["title"], "title-text")
+				.close("title", "/title")
+				.open("script", {},"script")
+					.text(values["script"], "script-text")
+				.close("script", "/script")
+			.close("head", "/head")
+			.open("body", {},"body")
+				.void("input", {
+					"type": values["input.type"],
+					"value": values["input.value"],
+				}, "input")
+			.close("body", "/body")
+		.close("html", "/html")
+)
 
 @pytest.fixture
 def html() -> str:
-	return htmlBuilder.get(spacing = True)
+	return builder.html
 
 
 class TestHTMLParser:
@@ -53,8 +57,8 @@ class TestHTMLParser:
 		assert parser.strict == strict
 
 	@pytest.mark.parametrize("segmentNo", [
-		(tags["doctype"]),
-		(tags["input"]),
+		(builder.getIdByName("doctype")),
+		(builder.getIdByName("input")),
 	])
 	def test_current(self,
 		html: str,
@@ -69,14 +73,14 @@ class TestHTMLParser:
 		assert parser.current == current
 
 	@pytest.mark.parametrize("segmentNo, className, name, open, close, attributes, text", [
-		(tags["doctype"], HTMLParserElementSegment, "!doctype", True, False, { "html": "true" }, None),
-		(tags["html"], HTMLParserElementSegment, "html", True, False, {}, None),
-		(tags["/html"], HTMLParserElementSegment, "html", False, True, {}, None),
-		(tags["head"], HTMLParserElementSegment, "head", True, False, {}, None),
-		(tags["/head"], HTMLParserElementSegment, "head", False, True, {}, None),
-		(tags["title-text"], HTMLParserTextSegment, None, False, False, None, values["title"]),
-		(tags["script-text"], HTMLParserTextSegment, None, False, False, None, values["script"]),
-		(tags["input"], HTMLParserElementSegment, "input", True, True, { "type": values["input.type"], "value": values["input.value"] }, None),
+		(builder.getIdByName("doctype"), HTMLParserElementSegment, "!doctype", True, False, { "html": "true" }, None),
+		(builder.getIdByName("html"), HTMLParserElementSegment, "html", True, False, {}, None),
+		(builder.getIdByName("/html"), HTMLParserElementSegment, "html", False, True, {}, None),
+		(builder.getIdByName("head"), HTMLParserElementSegment, "head", True, False, {}, None),
+		(builder.getIdByName("/head"), HTMLParserElementSegment, "head", False, True, {}, None),
+		(builder.getIdByName("title-text"), HTMLParserTextSegment, None, False, False, None, values["title"]),
+		(builder.getIdByName("script-text"), HTMLParserTextSegment, None, False, False, None, values["script"]),
+		(builder.getIdByName("input"), HTMLParserElementSegment, "input", True, True, { "type": values["input.type"], "value": values["input.value"] }, None),
 	])
 	def test_next(self,
 		html: str,
@@ -127,7 +131,7 @@ class TestHTMLParser:
 	def test_iter_count(self, html: str):
 		parser: HTMLParser = HTMLParser(html = html, strict = True)
 
-		expected: int = len(htmlBuilder.nodes)
+		expected: int = builder.count
 
 		actual: int = 0
 		for segment in parser:
